@@ -26,7 +26,7 @@ private FirebaseFirestore db;
         setContentView(R.layout.activity_main);
 
         etNomVoyage = findViewById(R.id.etNomVoyage);
-        button_Creer_Voyage = findViewById(R.id.button_Creer_Voyage);
+        button_Creer_Voyage = findViewById(R.id.id_button_create_voyage);
         db = FirebaseFirestore.getInstance();
 
         button_Creer_Voyage.setOnClickListener(v -> {;
