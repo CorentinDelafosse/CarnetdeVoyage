@@ -3,11 +3,7 @@ package fr.upjv.carnetdevoyage;
 import android.content.Intent;
 import android.os.Bundle;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -16,19 +12,10 @@ import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.SeekBar;
-import android.widget.TextView;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
-    private Button button_creer_voyage;
     private FirebaseFirestore db;
     private RecyclerView recyclerView;
     private VoyageAdapter adapter;
@@ -51,27 +38,29 @@ public class MainActivity extends AppCompatActivity {
         });
         recyclerView.setAdapter(adapter);
 
+        // lance l'écoute en temps réel pour rafraîchir la liste automatiquement
         updateVoyages();
     }
 
-
     public void on_click_create_voyage(View view) {
-        // ouvrir l'activité EditVoyage sans données
+        Log.i("MainActivity", "Bouton créer voyage cliqué");
         Intent intent = new Intent(this, EditVoyage.class);
         startActivity(intent);
     }
 
     public void updateVoyages() {
-        db.collection("voyages").get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
+        db.collection("voyages").addSnapshotListener((value, error) -> {
+            if (error != null) {
+                Log.w("MainActivity", "Erreur écoute Firestore : ", error);
+                return;
+            }
+            if (value != null) {
                 voyageList.clear();
-                for (QueryDocumentSnapshot doc : task.getResult()) {
+                for (QueryDocumentSnapshot doc : value) {
                     Voyage v = doc.toObject(Voyage.class);
                     voyageList.add(v);
                 }
                 adapter.setVoyages(voyageList);
-            } else {
-                Log.w("MainActivity", "Error getting documents.", task.getException());
             }
         });
     }
