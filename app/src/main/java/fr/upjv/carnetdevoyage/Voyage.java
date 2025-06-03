@@ -1,37 +1,16 @@
 package fr.upjv.carnetdevoyage;
 
 public class Voyage {
-    private String nom;
-    private String dateDebut;
-    private String dateFin;
+    private String nom_voyage;
+    private int periodicite;
 
-    public Voyage(String nom, String dateDebut, String dateFin) {
-        this.nom = nom;
-        this.dateDebut = dateDebut;
-        this.dateFin = dateFin;
+    public Voyage() {} // Nécessaire pour Firestore
+
+    public Voyage(String nom_voyage, int periodicite) {
+        this.nom_voyage = nom_voyage;
+        this.periodicite = periodicite;
     }
 
-    public String getNom() {
-        return nom;
-    }
-
-    public void setNom(String nom) {
-        this.nom = nom;
-    }
-
-    public String getDateDebut() {
-        return dateDebut;
-    }
-
-    public void setDateDebut(String dateDebut) {
-        this.dateDebut = dateDebut;
-    }
-
-    public String getDateFin() {
-        return dateFin;
-    }
-
-    public void setDateFin(String dateFin) {
-        this.dateFin = dateFin;
-    }
+    public String getNom_voyage() { return nom_voyage; }
+    public int getPeriodicite() { return periodicite; }
 }

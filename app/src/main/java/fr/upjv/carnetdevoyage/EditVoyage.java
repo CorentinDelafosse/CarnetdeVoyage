@@ -82,6 +82,12 @@ public class EditVoyage extends AppCompatActivity {
                     // Document successfully written
                     Log.d("EditVoyage", "Voyage correctement inscrit!");
                     // close the activity and return to the previous one
+                    // and call updateVoyages() in MainActivity
+                    MainActivity mainActivity = (MainActivity) getParent();
+                    if (mainActivity != null) {
+                        Log.d("EditVoyage", "Appel de updateVoyages dans MainActivity");
+                        mainActivity.updateVoyages();
+                    }
                     finish();
                 })
                 .addOnFailureListener(e -> {
