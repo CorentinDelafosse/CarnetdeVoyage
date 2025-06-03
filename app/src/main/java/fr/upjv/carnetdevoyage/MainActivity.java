@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView = findViewById(R.id.recyclerVoyages_list_voyages);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
         adapter = new VoyageAdapter(voyageList, voyage -> {
-            Intent intent = new Intent(MainActivity.this, EditVoyage.class);
+            Intent intent = new Intent(MainActivity.this, VoyageMaps.class);
             intent.putExtra("nom_voyage", voyage.getNom_voyage());
             startActivity(intent);
         });
