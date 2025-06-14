@@ -35,7 +35,8 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, VoyageMaps.class);
             intent.putExtra("nom_voyage", voyage.getNom_voyage());
             startActivity(intent);
-        });
+        }, this);
+
         recyclerView.setAdapter(adapter);
 
         // lance l'écoute en temps réel pour rafraîchir la liste automatiquement
