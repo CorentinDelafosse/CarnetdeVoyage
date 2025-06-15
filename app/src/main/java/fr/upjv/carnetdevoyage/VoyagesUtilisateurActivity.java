@@ -43,7 +43,7 @@ public class VoyagesUtilisateurActivity extends AppCompatActivity {
             intent.putExtra("email_utilisateur", emailUtilisateur); // utilisateur à observer
             intent.putExtra("mode_observation", true); // pour cacher les boutons
             startActivity(intent);
-        }, this);
+        }, this, true);
 
         recyclerView.setAdapter(adapter);
 

@@ -36,7 +36,7 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, VoyageMaps.class);
             intent.putExtra("nom_voyage", voyage.getNom_voyage());
             startActivity(intent);
-        }, this);
+        }, this, false);
 
         recyclerView.setAdapter(adapter);
 

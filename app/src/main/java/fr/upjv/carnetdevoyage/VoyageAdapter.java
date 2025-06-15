@@ -22,11 +22,13 @@ public class VoyageAdapter extends RecyclerView.Adapter<VoyageAdapter.VoyageView
     private OnItemClickListener listener;
     private Context context;
     private String emailUtilisateur;
+    private boolean isSearchMode;
 
-    public VoyageAdapter(List<Voyage> voyages, OnItemClickListener listener, Context context) {
+    public VoyageAdapter(List<Voyage> voyages, OnItemClickListener listener, Context context, boolean isSearchMode) {
         this.voyages = voyages;
         this.listener = listener;
         this.context = context;
+        this.isSearchMode = isSearchMode;
 
         // Récupère l'email de l'utilisateur connecté pour savoir si on peut afficher le bouton supprimer
         this.emailUtilisateur = FirebaseAuth.getInstance().getCurrentUser() != null
@@ -50,9 +52,9 @@ public class VoyageAdapter extends RecyclerView.Adapter<VoyageAdapter.VoyageView
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(voyage));
 
-        // Si ce n’est pas le propriétaire, on cache le bouton supprimer
+        // On cache le bouton supprimer si on est en mode recherche ou si ce n'est pas le propriétaire
         boolean isOwner = voyage.getEmail() == null || voyage.getEmail().equals(emailUtilisateur);
-        holder.btnDelete.setVisibility(isOwner ? View.VISIBLE : View.GONE);
+        holder.btnDelete.setVisibility((!isSearchMode && isOwner) ? View.VISIBLE : View.GONE);
 
         holder.btnDelete.setOnClickListener(v -> {
             new AlertDialog.Builder(context)
