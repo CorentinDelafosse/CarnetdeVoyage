@@ -17,12 +17,13 @@ tools:context=".VoyageMaps">
         tools:context=".VoyageMaps" />
 
 <!-- Le bouton par-dessus la map -->
+
     <Button
         android:id="@+id/button_export_gpx"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_gravity="bottom|center_horizontal"
-        android:layout_marginBottom="16dp"
+        android:layout_gravity="bottom|right"
+        android:layout_margin="16dp"
         android:onClick="onClickExportGPX"
         android:text="Exporter" />
 
@@ -30,8 +31,9 @@ tools:context=".VoyageMaps">
         android:id="@+id/btn_end_voyage"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Terminer le voyage"
-        android:layout_gravity="center"
-        android:onClick="onClickEndVoyage" />
+        android:layout_gravity="bottom|left"
+        android:layout_margin="16dp"
+        android:onClick="onClickEndVoyage"
+        android:text="Terminer le voyage" />
 
 </FrameLayout>
