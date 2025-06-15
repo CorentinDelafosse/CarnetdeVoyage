@@ -62,13 +62,12 @@ public class EditVoyage extends AppCompatActivity {
             return;
         }
 
-        // Récupérer l'utilisateur connecté
         String userEmail = FirebaseAuth.getInstance().getCurrentUser().getEmail();
 
-        // Créer la structure du document
         Map<String, Object> voyage = new HashMap<>();
         voyage.put("nom_voyage", nom_voyage);
         voyage.put("periodicite", periodicite);
+        voyage.put("userEmail", userEmail);
 
         db.collection("users")
                 .document(userEmail)
@@ -77,10 +76,9 @@ public class EditVoyage extends AppCompatActivity {
                 .set(voyage)
                 .addOnSuccessListener(aVoid -> {
                     Log.d("EditVoyage", "Voyage bien enregistré dans Firestore");
-
-                    // Optionnel : notify MainActivity
                     finish();
                 })
                 .addOnFailureListener(e -> Log.w("EditVoyage", "Erreur d'enregistrement", e));
     }
+
 }

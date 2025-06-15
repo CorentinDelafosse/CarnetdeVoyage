@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
@@ -50,19 +51,37 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void updateVoyages() {
-        db.collection("voyages").addSnapshotListener((value, error) -> {
-            if (error != null) {
-                Log.w("MainActivity", "Erreur écoute Firestore : ", error);
-                return;
-            }
-            if (value != null) {
-                voyageList.clear();
-                for (QueryDocumentSnapshot doc : value) {
-                    Voyage v = doc.toObject(Voyage.class);
-                    voyageList.add(v);
-                }
-                adapter.setVoyages(voyageList);
-            }
-        });
+        String userEmail = FirebaseAuth.getInstance().getCurrentUser().getEmail();
+
+        db.collection("users")
+                .document(userEmail)
+                .collection("voyages")
+                .addSnapshotListener((value, error) -> {
+                    if (error != null) {
+                        Log.w("MainActivity", "Erreur écoute Firestore : ", error);
+                        return;
+                    }
+                    if (value != null) {
+                        voyageList.clear();
+                        for (QueryDocumentSnapshot doc : value) {
+                            Voyage v = doc.toObject(Voyage.class);
+                            voyageList.add(v);
+                        }
+                        adapter.setVoyages(voyageList);
+                    }
+                });
     }
+    public void onClickLogout(View view) {
+        FirebaseAuth.getInstance().signOut();
+        Intent intent = new Intent(this, LoginActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
+    }
+    public void onClickObserverAutreUser(View view) {
+        Intent intent = new Intent(this, SearchUserActivity.class);
+        startActivity(intent);
+    }
+
+
 }

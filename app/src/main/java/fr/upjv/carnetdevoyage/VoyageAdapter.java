@@ -2,17 +2,18 @@ package fr.upjv.carnetdevoyage;
 
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.util.Log;
 import android.view.*;
 import android.widget.*;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 import java.util.List;
 
 public class VoyageAdapter extends RecyclerView.Adapter<VoyageAdapter.VoyageViewHolder> {
+
     public interface OnItemClickListener {
         void onItemClick(Voyage voyage);
     }
@@ -20,11 +21,17 @@ public class VoyageAdapter extends RecyclerView.Adapter<VoyageAdapter.VoyageView
     private List<Voyage> voyages;
     private OnItemClickListener listener;
     private Context context;
+    private String emailUtilisateur;
 
     public VoyageAdapter(List<Voyage> voyages, OnItemClickListener listener, Context context) {
         this.voyages = voyages;
         this.listener = listener;
         this.context = context;
+
+        // Récupère l'email de l'utilisateur connecté pour savoir si on peut afficher le bouton supprimer
+        this.emailUtilisateur = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getEmail()
+                : "";
     }
 
     @NonNull
@@ -43,20 +50,32 @@ public class VoyageAdapter extends RecyclerView.Adapter<VoyageAdapter.VoyageView
 
         holder.itemView.setOnClickListener(v -> listener.onItemClick(voyage));
 
+        // Si ce n’est pas le propriétaire, on cache le bouton supprimer
+        boolean isOwner = voyage.getEmail() == null || voyage.getEmail().equals(emailUtilisateur);
+        holder.btnDelete.setVisibility(isOwner ? View.VISIBLE : View.GONE);
+
         holder.btnDelete.setOnClickListener(v -> {
             new AlertDialog.Builder(context)
                     .setTitle("Supprimer ce voyage ?")
                     .setMessage("Tous les points GPS liés seront aussi supprimés.")
                     .setPositiveButton("Oui", (dialog, which) -> {
                         FirebaseFirestore db = FirebaseFirestore.getInstance();
-                        db.collection("voyages").document(voyage.getNom_voyage())
+                        String chemin = "users/" + emailUtilisateur + "/voyages/" + voyage.getNom_voyage();
+
+                        db.collection("users")
+                                .document(emailUtilisateur)
+                                .collection("voyages")
+                                .document(voyage.getNom_voyage())
                                 .collection("points")
                                 .get()
                                 .addOnSuccessListener(query -> {
                                     for (QueryDocumentSnapshot doc : query) {
                                         doc.getReference().delete();
                                     }
-                                    db.collection("voyages").document(voyage.getNom_voyage())
+                                    db.collection("users")
+                                            .document(emailUtilisateur)
+                                            .collection("voyages")
+                                            .document(voyage.getNom_voyage())
                                             .delete()
                                             .addOnSuccessListener(aVoid -> {
                                                 voyages.remove(position);

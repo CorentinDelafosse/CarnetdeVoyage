@@ -7,6 +7,7 @@ import androidx.core.content.FileProvider;
 import androidx.fragment.app.FragmentActivity;
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
@@ -14,30 +15,27 @@ import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
+import com.google.android.gms.location.FusedLocationProviderClient;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
-import fr.upjv.carnetdevoyage.databinding.ActivityVoyageMapsBinding;
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.model.Polyline;
+import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import android.app.AlertDialog;
-import android.widget.Toast;
-import com.google.android.gms.maps.model.Polyline;
-import com.google.android.gms.maps.model.PolylineOptions;
+import java.util.*;
 
-import java.util.ArrayList;
-import java.util.List;
+import fr.upjv.carnetdevoyage.databinding.ActivityVoyageMapsBinding;
 
 public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
 
@@ -48,25 +46,38 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
     private Runnable locationRunnable;
     private FusedLocationProviderClient fusedLocationClient;
     private String nom_voyage;
+    private String userEmail;
     private long intervalMillis = 2 * 60 * 1000;
-
     private boolean isTracking = true;
-
     private List<LatLng> pointList = new ArrayList<>();
     private Polyline polyline;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         binding = ActivityVoyageMapsBinding.inflate(getLayoutInflater());
         setContentView(binding.getRoot());
 
+        boolean modeObservation = getIntent().getBooleanExtra("mode_observation", false);
+
         nom_voyage = getIntent().getStringExtra("nom_voyage");
+        String emailTransmis = getIntent().getStringExtra("email_utilisateur");
+        userEmail = (emailTransmis != null) ? emailTransmis : FirebaseAuth.getInstance().getCurrentUser().getEmail();
+
+        boolean isObserving = emailTransmis != null && !emailTransmis.equals(FirebaseAuth.getInstance().getCurrentUser().getEmail());
+        isTracking = !isObserving;
+
+        if (modeObservation) {
+            findViewById(R.id.btn_end_voyage).setVisibility(View.GONE);
+            findViewById(R.id.button_export_gpx).setVisibility(View.GONE);
+        }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
 
         FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userEmail)
                 .collection("voyages")
                 .document(nom_voyage)
                 .get()
@@ -78,9 +89,11 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
                         }
                     }
                     startLocationTracking();
+                    if (isObserving) afficherTrajetExistant();
                 })
                 .addOnFailureListener(e -> {
                     startLocationTracking();
+                    if (isObserving) afficherTrajetExistant();
                 });
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -120,7 +133,6 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
 
     private void enregistrerPosition() {
         if (!isTracking) return;
-
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
 
         fusedLocationClient.getLastLocation()
@@ -133,7 +145,7 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
                         pointList.add(latLng);
 
                         runOnUiThread(() -> {
-                            mMap.addMarker(new MarkerOptions().position(latLng).title("📍"));
+                            mMap.addMarker(new MarkerOptions().position(latLng).title("\uD83D\uDCCD"));
                             if (polyline == null) {
                                 polyline = mMap.addPolyline(new PolylineOptions().addAll(pointList));
                             } else {
@@ -147,35 +159,49 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
                         point.put("timestamp", System.currentTimeMillis());
 
                         FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(userEmail)
                                 .collection("voyages")
                                 .document(nom_voyage)
                                 .collection("points")
-                                .add(point)
-                                .addOnSuccessListener(d -> Log.d("TRACK", "📍 Point enregistré"))
-                                .addOnFailureListener(e -> Log.e("TRACK", "❌ Échec d'enregistrement", e));
+                                .add(point);
                     }
                 });
     }
 
-
     private void startLocationTracking() {
-        enregistrerPosition(); // première position
-        locationRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (isTracking) {
-                    enregistrerPosition();
-                    handler.postDelayed(this, intervalMillis);
-                }
+        if (isTracking) enregistrerPosition();
+        locationRunnable = () -> {
+            if (isTracking) {
+                enregistrerPosition();
+                handler.postDelayed(locationRunnable, intervalMillis);
             }
         };
         handler.postDelayed(locationRunnable, intervalMillis);
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        stopLocationTracking();
+    private void afficherTrajetExistant() {
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userEmail)
+                .collection("voyages")
+                .document(nom_voyage)
+                .collection("points")
+                .get()
+                .addOnSuccessListener(query -> {
+                    pointList.clear();
+                    for (var doc : query) {
+                        double lat = doc.getDouble("latitude");
+                        double lon = doc.getDouble("longitude");
+                        LatLng point = new LatLng(lat, lon);
+                        pointList.add(point);
+                        mMap.addMarker(new MarkerOptions().position(point));
+                    }
+                    if (!pointList.isEmpty()) {
+                        polyline = mMap.addPolyline(new PolylineOptions().addAll(pointList));
+                        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(pointList.get(0), 12f));
+                    }
+                });
     }
 
     private void stopLocationTracking() {
@@ -197,6 +223,8 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
 
     public void onClickExportGPX(View view) {
         FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(userEmail)
                 .collection("voyages")
                 .document(nom_voyage)
                 .collection("points")
@@ -235,8 +263,7 @@ public class VoyageMaps extends FragmentActivity implements OnMapReadyCallback {
                         Log.e("ExportGPX", "Erreur écriture GPX", e);
                     }
 
-                })
-                .addOnFailureListener(e -> Log.e("ExportGPX", "Erreur Firestore", e));
+                });
     }
 
     @Override

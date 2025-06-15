@@ -38,6 +38,10 @@
         <activity
             android:name=".MainActivity"
             android:exported="true" />
+        <activity android:name=".SearchUserActivity" />
+        <activity android:name=".ObserverVoyagesActivity" />
+        <activity android:name=".VoyagesUtilisateurActivity" />
+
 
         <!-- Carte du voyage -->
         <activity
